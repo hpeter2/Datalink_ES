@@ -15,10 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Datalink.cpp">
+    <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="DatalinkPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DatalinkScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DatalinkApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HoppieConn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OccAircraft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -40,7 +55,37 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Datalink.h">
+    <ClInclude Include="DatalinkPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DatalinkScreen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DatalinkApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\EuroScope\PlugInEnvironment\EuroScopePlugIn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HoppieList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HoppieConn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="S.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OccAircraft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -48,5 +93,129 @@
     <ResourceCompile Include="Datalink.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\buttons\btn1Dcl.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn1Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn1Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn1On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn2Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn2LogOff.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn2Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn2On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn3Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn3Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn3On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn4Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn4Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn4On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn5Clear.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn5Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn5Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn5On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn6Log.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn6Off.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\btn6On.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listLVL.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listLVLEx.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listLVLRply.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listMike.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listROUTE.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listROUTEEx.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listROUTERply.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listSSR.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listSSRStart2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listSSRStop.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\buttons\listVCI.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\headerMapConnected.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\headerMapError.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\headerMap.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\aircraftClear.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\aircraftSelected.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\data.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\aircraft.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\notification.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
   </ItemGroup>
 </Project>
