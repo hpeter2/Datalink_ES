@@ -32,6 +32,9 @@ public:
 	CString		m_RelaySquawk = "";
 	CString		m_RelayDct = "";
 
+	// Only needed for selectedItem
+	int			m_SelectedIdx = -1;
+
 	// m_Connected:
 	// 0 : Error
 	// 1 : Connected
@@ -69,6 +72,10 @@ public:
 		m_Callsign = callsign;
 	}
 
+	inline CHoppieList(int selectedIdx)
+	{
+		m_SelectedIdx = selectedIdx;
+	}
 
 	virtual inline ~CHoppieList() 
 	{
@@ -76,10 +83,25 @@ public:
 	}
 
 
-	inline void setVal(CString callsign, int connected)
+	inline void SetVal(CString callsign, int connected)
 	{
 		m_Callsign = callsign;
 		m_Connected = connected;
+	}
+
+	inline bool IsEmpty()
+	{
+		return (m_SelectedIdx < 0);
+	}
+
+	bool operator== (CHoppieList other)
+	{
+		return (this->m_Callsign == other.m_Callsign);
+	}
+
+	bool operator!= (CHoppieList other)
+	{
+		return !operator==(other);
 	}
 };
 

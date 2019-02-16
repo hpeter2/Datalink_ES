@@ -7,23 +7,26 @@ CString Logger::DLL_PATH;
 
 
 //---CDatalinkPlugin--------------------------------------
-CDatalinkPlugin::CDatalinkPlugin () :	CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
-										MY_PLUGIN_NAME,
-										MY_PLUGIN_VERSION,
-										MY_PLUGIN_DEVELOPER,
-										MY_PLUGIN_COPYRIGHT),
+CDatalinkPlugin::CDatalinkPlugin() :	CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
+												MY_PLUGIN_NAME,
+												MY_PLUGIN_VERSION,
+												MY_PLUGIN_DEVELOPER,
+												MY_PLUGIN_COPYRIGHT),
 										util(S::getUtilInstance())
 {
+	CString msg;
 #ifdef DEBUG
-	DisplayUserMessage("DataLink", "DataLink", "DEBUG VERSION INITIALISED", false, true, true, true, false);
+	msg = "DEBUG VERSION INITIALISED";
 #else
-	DisplayUserMessage("DataLink", "DataLink", MY_PLUGIN_VERSION + " INITIALISED", false, true, true, true, false);
+	msg.Format("%s INITIALISED", MY_PLUGIN_VERSION);
 #endif
+	DisplayUserMessage("DataLink", "DataLink", msg, false, true, true, false, false);
 	Logger::Log("SYSTEM: CDatalinkPlugin()");
 
 	CController a = ControllerMyself();//ControllerMyself();
 	initCallsigns();
 	initWPN();
+	m_cycle = 0;
 
 	// register my own view type
 	RegisterDisplayType (MY_PLUGIN_VIEW,
@@ -35,7 +38,7 @@ CDatalinkPlugin::CDatalinkPlugin () :	CPlugIn(EuroScopePlugIn::COMPATIBILITY_COD
 
 
 //---CDatalinkPlugin--------------------------------------
-CDatalinkPlugin::~CDatalinkPlugin ()
+CDatalinkPlugin::~CDatalinkPlugin()
 {
 	Logger::Log("SYSTEM: ~CDatalinkPlugin()");
 }
@@ -48,7 +51,7 @@ void CDatalinkPlugin::initCallsigns()
 	TCHAR* pszFileName = _T("callsigns.ini");
 	CString line;
 
-	if (!file.Open(util.hoppie.currentDir + pszFileName, CFile::modeRead | CFile::shareDenyWrite, &e))
+	if (!file.Open(util.currentDir + pszFileName, CFile::modeRead | CFile::shareDenyWrite, &e))
 	{
 		//TRACE(_T("File could not be opened %d\n"), e.m_cause);
 
@@ -225,7 +228,7 @@ void	CDatalinkPlugin::OnGetTagItem (EuroScopePlugIn::CFlightPlan FlightPlan, Eur
 					  int TagData, char sItemString[16], int * pColorCode, COLORREF * pRGB, double * pFontSize)
 {
 	const int TAG_COLOR_RGB_DEFINED = 1;
-	if (util.buttonList == BUTTON_CLIMB)
+	if (util.buttonList == BUTTON_CLIMB || util.buttonList == BUTTON_DESCEND || util.buttonList == BUTTON_MAINTN)
 		OnTimer(m_lastSend + 1000);
 
 	POSITION pos;
@@ -237,7 +240,7 @@ void	CDatalinkPlugin::OnGetTagItem (EuroScopePlugIn::CFlightPlan FlightPlan, Eur
 	if (ItemCode == 1)
 	{
 		// If AC not Connected to my Station
-		if ((pos = util.hoppie._SelectAcFromVinicityList(HOPPIE_LIST, FlightPlan.GetCallsign())) == NULL) 
+		if ((pos = util.hoppie._SelectAcFromVicinityList(HOPPIE_LIST, FlightPlan.GetCallsign())) == NULL) 
 		{
 			// If AC is in Hoppie List
 			if ((pos = util.hoppie.hoppieAcList.Find(FlightPlan.GetCallsign())) != NULL) {
@@ -293,7 +296,7 @@ void    CDatalinkPlugin::OnRadarTargetPositionUpdate (EuroScopePlugIn::CRadarTar
 		OnTimer(m_lastSend);
 
 	POSITION posx;
-	if ((posx = util.hoppie._SelectAcFromVinicityList(HOPPIE_LIST, RadarTarget.GetCallsign())) != NULL)
+	if ((posx = util.hoppie._SelectAcFromVicinityList(HOPPIE_LIST, RadarTarget.GetCallsign())) != NULL)
 	{
 		if (util.hoppie.hoppieList.GetAt(posx).m_RelayLvl != -1) {
 			RadarTarget.GetCorrelatedFlightPlan().GetControllerAssignedData().SetClearedAltitude(util.hoppie.hoppieList.GetAt(posx).m_RelayLvl);
@@ -313,7 +316,7 @@ void    CDatalinkPlugin::OnRadarTargetPositionUpdate (EuroScopePlugIn::CRadarTar
 		}
 	}
 
-	POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, RadarTarget.GetCallsign());
+	POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, RadarTarget.GetCallsign());
 	CFlightPlanData fpData = RadarTarget.GetCorrelatedFlightPlan().GetFlightPlanData();
 	CFlightPlanControllerAssignedData CfpData = RadarTarget.GetCorrelatedFlightPlan().GetControllerAssignedData();
 
@@ -339,7 +342,7 @@ void    CDatalinkPlugin::OnFlightPlanDisconnect (EuroScopePlugIn::CFlightPlan Fl
 	if (util.buttonList >= BUTTON_CLIMB && util.buttonList <= BUTTON_AUTO)
 		OnTimer(m_lastSend);
 
-	POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, FlightPlan.GetCallsign());
+	POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, FlightPlan.GetCallsign());
 
 	if (pos != NULL)
 	{
@@ -355,7 +358,7 @@ void    CDatalinkPlugin::OnFlightPlanFlightPlanDataUpdate (EuroScopePlugIn::CFli
 		OnTimer(m_lastSend);
 
 	POSITION posx;
-	if ((posx = util.hoppie._SelectAcFromVinicityList(HOPPIE_LIST, FlightPlan.GetCallsign())) != NULL) {
+	if ((posx = util.hoppie._SelectAcFromVicinityList(HOPPIE_LIST, FlightPlan.GetCallsign())) != NULL) {
 		if (util.hoppie.hoppieList.GetAt(posx).m_RelayLvl != -1) {
 			FlightPlan.GetControllerAssignedData().SetClearedAltitude(util.hoppie.hoppieList.GetAt(posx).m_RelayLvl);
 			util.hoppie.hoppieList.GetAt(posx).m_RelayLvl = -1;
@@ -374,7 +377,7 @@ void    CDatalinkPlugin::OnFlightPlanFlightPlanDataUpdate (EuroScopePlugIn::CFli
 		}
 	}
 
-	POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, FlightPlan.GetCallsign());
+	POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, FlightPlan.GetCallsign());
 	CFlightPlanData fpData = FlightPlan.GetFlightPlanData();
 	CFlightPlanControllerAssignedData CfpData = FlightPlan.GetControllerAssignedData();
 
@@ -397,7 +400,7 @@ void    CDatalinkPlugin::OnFlightPlanControllerAssignedDataUpdate (EuroScopePlug
 		OnTimer(m_lastSend);
 
 	POSITION posx;
-	if ((posx = util.hoppie._SelectAcFromVinicityList(HOPPIE_LIST, FlightPlan.GetCallsign())) != NULL)
+	if ((posx = util.hoppie._SelectAcFromVicinityList(HOPPIE_LIST, FlightPlan.GetCallsign())) != NULL)
 	{
 		if (util.hoppie.hoppieList.GetAt(posx).m_RelayLvl != -1) {
 			FlightPlan.GetControllerAssignedData().SetClearedAltitude(util.hoppie.hoppieList.GetAt(posx).m_RelayLvl);
@@ -417,7 +420,7 @@ void    CDatalinkPlugin::OnFlightPlanControllerAssignedDataUpdate (EuroScopePlug
 		}
 	}
 
-	POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, FlightPlan.GetCallsign());
+	POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, FlightPlan.GetCallsign());
 	CFlightPlanData fpData = FlightPlan.GetFlightPlanData();
 	CFlightPlanControllerAssignedData CfpData = FlightPlan.GetControllerAssignedData();
 
@@ -441,8 +444,8 @@ void    CDatalinkPlugin::OnControllerDisconnect (EuroScopePlugIn::CController Co
 	if (strcmp(Controller.GetFullName(), ControllerMyself().GetFullName()) == 0)
 		util.hoppie.controllerMyself.valid = false;
 
-	else if (util.hoppie._SelectAcFromVinicityList(CONTROLLER_LIST, Controller.GetCallsign()) != NULL) {
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(CONTROLLER_LIST, Controller.GetCallsign());
+	else if (util.hoppie._SelectAcFromVicinityList(CONTROLLER_LIST, Controller.GetCallsign()) != NULL) {
+		POSITION pos = util.hoppie._SelectAcFromVicinityList(CONTROLLER_LIST, Controller.GetCallsign());
 		util.hoppie.controller.RemoveAt(pos);
 	}
 }
@@ -458,15 +461,15 @@ void	CDatalinkPlugin::OnControllerPositionUpdate (EuroScopePlugIn::CController C
 		util.hoppie.controllerMyself.facility = Controller.GetFacility();
 		util.hoppie.controllerMyself.spokenCallsign = "";
 	}
-	else if (util.hoppie._SelectAcFromVinicityList(CONTROLLER_LIST, Controller.GetCallsign()) != NULL) {
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(CONTROLLER_LIST, Controller.GetCallsign());
+	else if (util.hoppie._SelectAcFromVicinityList(CONTROLLER_LIST, Controller.GetCallsign()) != NULL) {
+		POSITION pos = util.hoppie._SelectAcFromVicinityList(CONTROLLER_LIST, Controller.GetCallsign());
 		util.hoppie.controller.GetAt(pos).callsign = Controller.GetCallsign();
 		util.hoppie.controller.GetAt(pos).facility = Controller.GetFacility();
 		util.hoppie.controller.GetAt(pos).freq = Controller.GetPrimaryFrequency();
 		util.hoppie.controller.GetAt(pos).valid = Controller.IsValid();
 
-		if (util.hoppie._SelectAcFromVinicityList(SPOKEN_LIST, Controller.GetCallsign()) != NULL) {
-			POSITION pos2 = util.hoppie._SelectAcFromVinicityList(SPOKEN_LIST, Controller.GetCallsign());
+		if (util.hoppie._SelectAcFromVicinityList(SPOKEN_LIST, Controller.GetCallsign()) != NULL) {
+			POSITION pos2 = util.hoppie._SelectAcFromVicinityList(SPOKEN_LIST, Controller.GetCallsign());
 			util.hoppie.controller.GetAt(pos).spokenCallsign = util.hoppie.spokenList.GetAt(pos2).spokenCallsign;
 		}
 		else
@@ -479,8 +482,8 @@ void	CDatalinkPlugin::OnControllerPositionUpdate (EuroScopePlugIn::CController C
 		tmp.valid = Controller.IsValid();
 		tmp.facility = Controller.GetFacility();
 
-		if (util.hoppie._SelectAcFromVinicityList(SPOKEN_LIST, Controller.GetCallsign()) != NULL) {
-			POSITION pos2 = util.hoppie._SelectAcFromVinicityList(SPOKEN_LIST, Controller.GetCallsign());
+		if (util.hoppie._SelectAcFromVicinityList(SPOKEN_LIST, Controller.GetCallsign()) != NULL) {
+			POSITION pos2 = util.hoppie._SelectAcFromVicinityList(SPOKEN_LIST, Controller.GetCallsign());
 			tmp.spokenCallsign = util.hoppie.spokenList.GetAt(pos2).spokenCallsign;
 		}
 		else
@@ -611,7 +614,7 @@ void    CDatalinkPlugin::OnTimer (int Counter)
 		char str[10];
 		POSITION pos;
 		int selected = 380;
-		if ((pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign)) != NULL)
+		if ((pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign)) != NULL)
 			if (util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCFlightlevel > 90 && util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCFlightlevel < 600)
 				selected = util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCFlightlevel;
 
@@ -650,7 +653,7 @@ void    CDatalinkPlugin::OnTimer (int Counter)
 		char str[10];
 		POSITION pos;
 		int selected = 180;
-		if ((pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign)) != NULL) {
+		if ((pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign)) != NULL) {
 			if (util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCHeading > 0)
 				selected = util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCHeading;
 			else
@@ -708,7 +711,7 @@ void    CDatalinkPlugin::OnTimer (int Counter)
 		POSITION pos;
 		CString selected = "";
 		int i = 0;
-		if ((pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign)) != NULL) {
+		if ((pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign)) != NULL) {
 			if (util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCDirect.GetLength() > 0)
 				selected = util.hoppie.m_VinicityAcList.GetAt(pos).m_ATCDirect;
 			else if (strlen(FlightPlanSelect(util.hoppie.m_VinicityAcList.GetAt(pos).m_Callsign).GetExitCoordinationPointName()) > 0)
@@ -803,62 +806,64 @@ void    CDatalinkPlugin::OnTimer (int Counter)
 	// AC Send
 	for (int i = 0; i < util.hoppie.hoppieList.GetCount(); ++i)
 	{
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetCount() > 0)
+		CHoppieList item = util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i));
+		if (item.m_Relay->GetCount() > 0)
 		{
-
-			for (int j = 0; j < util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetCount(); ++j)
+			
+			for (int j = 0; j < item.m_Relay->GetCount(); ++j)
 			{
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_cooldown == 0)
+				if (item.m_cooldown == 0)
 				{
-					if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead().MakeUpper().Find("DATA2") > -1)
-						util.hoppie.Message(MSG_SEND, MSG_CPDLC, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead());
+					
+					if (util.FindNoCase(item.m_Relay->GetHead(), "DATA2") > -1)
+						util.hoppie.Message(MSG_SEND, MSG_CPDLC, item.m_Callsign, item.m_Relay->GetHead());
 					else
-						util.hoppie.Message(MSG_SEND, MSG_TELEX, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead());
+						util.hoppie.Message(MSG_SEND, MSG_TELEX, item.m_Callsign, item.m_Relay->GetHead());
 
-					util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->RemoveHead();
-					util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_cooldown++;
+					item.m_Relay->RemoveHead();
+					item.m_cooldown++;
 				}
-				else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_cooldown == 10)
+				else if (item.m_cooldown == 10)
 				{
-					if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead().MakeUpper().Find("DATA2") > -1)
-						util.hoppie.Message(MSG_SEND, MSG_CPDLC, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead());
+					if (util.FindNoCase(item.m_Relay->GetHead(), "DATA2") > -1)
+						util.hoppie.Message(MSG_SEND, MSG_CPDLC, item.m_Callsign, item.m_Relay->GetHead());
 					else
-						util.hoppie.Message(MSG_SEND, MSG_TELEX, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->GetHead());
+						util.hoppie.Message(MSG_SEND, MSG_TELEX, item.m_Callsign, item.m_Relay->GetHead());
 
-					util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Relay->RemoveHead();
-					util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_cooldown = 0;
+					item.m_Relay->RemoveHead();
+					item.m_cooldown = 0;
 				}
 				else
-					util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_cooldown++;
+					item.m_cooldown++;
 			}//for
 		}//if
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelATCId != "")
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelTimer++;
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteATCId != "")
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteTimer++;
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceATCId != "")
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceTimer++;
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRATCId != "")
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRTimer++;
+		if (item.m_LevelATCId != "")
+			item.m_LevelTimer++;
+		if (item.m_RouteATCId != "")
+			item.m_RouteTimer++;
+		if (item.m_VoiceATCId != "")
+			item.m_VoiceTimer++;
+		if (item.m_SSRATCId != "")
+			item.m_SSRTimer++;
 
-		CFlightPlan FlightPlan = FlightPlanSelect(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign);
+		CFlightPlan FlightPlan = FlightPlanSelect(item.m_Callsign);
 		if (FlightPlan.IsValid())
 		{
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayLvl != -1) {
-				FlightPlan.GetControllerAssignedData().SetClearedAltitude(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayLvl);
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayLvl = -1;
+			if (item.m_RelayLvl != -1) {
+				FlightPlan.GetControllerAssignedData().SetClearedAltitude(item.m_RelayLvl);
+				item.m_RelayLvl = -1;
 			}
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayHdg != -1) {
-				FlightPlan.GetControllerAssignedData().SetAssignedHeading(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayHdg);
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayHdg = -1;
+			if (item.m_RelayHdg != -1) {
+				FlightPlan.GetControllerAssignedData().SetAssignedHeading(item.m_RelayHdg);
+				item.m_RelayHdg = -1;
 			}
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelaySquawk.GetLength() > 0) {
-				FlightPlan.GetControllerAssignedData().SetSquawk(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelaySquawk);
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelaySquawk = "";
+			if (item.m_RelaySquawk.GetLength() > 0) {
+				FlightPlan.GetControllerAssignedData().SetSquawk(item.m_RelaySquawk);
+				item.m_RelaySquawk = "";
 			}
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayDct.GetLength() > 0) {
-				FlightPlan.GetControllerAssignedData().SetDirectToPointName(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayDct);
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RelayDct = "";
+			if (item.m_RelayDct.GetLength() > 0) {
+				FlightPlan.GetControllerAssignedData().SetDirectToPointName(item.m_RelayDct);
+				item.m_RelayDct = "";
 			}
 		}
 	}//for
@@ -872,18 +877,19 @@ void    CDatalinkPlugin::OnTimer (int Counter)
 
 	// 
 	for (int i = 0; i < util.hoppie.hoppieList.GetCount(); ++i) {
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 5 && (posi = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign)) != NULL)
+		CHoppieList item = util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i));
+		if (item.m_Connected == 5 && (posi = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, item.m_Callsign)) != NULL)
 			if (util.hoppie.m_VinicityAcList.GetAt(posi).m_SectorEntry < 10)
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected = 3;
+				item.m_Connected = 3;
 
-		else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Logon == 3)
-			if ((pos = util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Voice.Find("REQ LOGON")) > -1) {
+		else if (item.m_Logon == 3)
+			if ((pos = util.FindNoCase(item.m_Relay->GetHead(), "REQ LOGON")) > -1) {
 				pos -= 4;
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Voice.Delete(pos, 14);
+				item.m_Voice.Delete(pos, 14);
 			}
 
-		else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Logon >= 1)
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Logon++;
+		else if (item.m_Logon >= 1)
+			item.m_Logon++;
 	}
 
 

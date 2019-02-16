@@ -11,10 +11,13 @@ public:
 	int		buttonList;
 	bool	configOpen;
 	CRect	listRect;
+	CString currentDir;
 
 	CHoppieConn hoppie;
 
 	CUtil();
 	virtual ~CUtil();
+
+	int FindNoCase(LPCTSTR pszString, LPCTSTR pszSearch);
 };
 

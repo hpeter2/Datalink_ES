@@ -5,7 +5,7 @@
 CHoppieConn::CHoppieConn()
 {
 	hoppieConnected = false;
-	cpdlcCounter = 0;
+	cpdlcCounter = 200;
 	csOverride = false;
 	euroscopeConnected = false;
 	pdcConnected = false;
@@ -16,20 +16,14 @@ CHoppieConn::CHoppieConn()
 	error = "";
 	logonCode = "";
 	callsign = "";
-	currentDir = "";
 	notificationSound = 1;
 	data.RemoveAll();
+	currentDir = GetCurrentDir();
+	selectedItem = new CHoppieList();
+	//int pos = util.currentDir.ReverseFind('\\');
 
-	TCHAR tmpT[MAX_PATH] = _T("");
-	DWORD len = GetModuleFileNameA((HINSTANCE)&__ImageBase, tmpT, MAX_PATH);
-
-	if (len == 0 || len >= MAX_PATH) strcpy(tmpT, "C:\\");
-
-	currentDir = tmpT;
-	int pos = currentDir.ReverseFind('\\');
-
-	if (pos > -1)
-		currentDir.Delete(pos + 1, currentDir.GetLength() - (pos + 1));
+	//if (pos > -1)
+		//currentDir.Delete(pos + 1, currentDir.GetLength() - (pos + 1));
 
 
 	char* tmpStr = new char[1024];
@@ -39,21 +33,20 @@ CHoppieConn::CHoppieConn()
 	logonCode = pApp->GetProfileString("Config", "logonCode", "");
 	if (logonCode == "") pApp->WriteProfileString("Config", "logonCode", "YOUR_LOGON_CODE");
 
-	iconify = pApp->GetProfileInt("Config", "iconify", 2);
-	if (iconify == 2) pApp->WriteProfileInt("Config", "iconify", 0);
+	iconify = pApp->GetProfileInt("Config", "iconify", 0);
+	if (iconify == 0) pApp->WriteProfileInt("Config", "iconify", 0);
 
-	x = pApp->GetProfileInt("Config", "x", 999);
-	if (x == 999) pApp->WriteProfileInt("Config", "x", 200);
+	x = pApp->GetProfileInt("Config", "x", 200);
+	if (x == 200) pApp->WriteProfileInt("Config", "x", 200);
 
-	y = pApp->GetProfileInt("Config", "y", 999);
-	if (y == 999) pApp->WriteProfileInt("Config", "y", 200);
+	y = pApp->GetProfileInt("Config", "y", 200);
+	if (y == 200) pApp->WriteProfileInt("Config", "y", 200);
 
-	cpdlcCounter = pApp->GetProfileInt("Config", "counter", 999);
-	if (cpdlcCounter == 999) pApp->WriteProfileInt("Config", "counter", 0);
+	cpdlcCounter = pApp->GetProfileInt("Config", "counter", 1);
+	if (cpdlcCounter == 1) pApp->WriteProfileInt("Config", "counter", 1);
 
-	notificationSound = pApp->GetProfileInt("Config", "notificationSound", 2);
-	if (notificationSound == 2) pApp->WriteProfileInt("Config", "notificationSound", 1);
-
+	notificationSound = pApp->GetProfileInt("Config", "notificationSound", 1);
+	if (notificationSound == 1) pApp->WriteProfileInt("Config", "notificationSound", 1);
 }
 
 
@@ -63,9 +56,10 @@ CHoppieConn::~CHoppieConn()
 	SetConfInt("iconify", iconify);
 	SetConfInt("x", x);
 	SetConfInt("y", y);
-	SetConfInt("counter", cpdlcCounter);
+	SetConfInt("counter", cpdlcCounter++);
 	SetConfInt("notificationSound", notificationSound);
-
+	
+	delete selectedItem;
 	HoppieClear();
 }
 
@@ -82,8 +76,8 @@ void CHoppieConn::SetConfInt(CString item, int value)
 }
 
 
-//---_SelectAcFromVinicityList-----------------------------------------
-POSITION CHoppieConn::_SelectAcFromVinicityList(int listIdx, const char * sCallsign)
+//---_SelectAcFromVicinityList-----------------------------------------
+POSITION CHoppieConn::_SelectAcFromVicinityList(int listIdx, const char * sCallsign)
 {
 	POSITION    pos;
 
@@ -198,13 +192,14 @@ void CHoppieConn::HoppieClear()
 			Message(MSG_SEND, MSG_TELEX, hoppieList.GetAt(hoppieList.FindIndex(i)).m_Callsign, "ATC STATION DISCONNECTED FROM NETWORK");
 		}
 	}
+	hoppieConnected = false;
 	hoppieList.RemoveAll();
 
 	Logger::Log("SYSTEM: hoppieClear()");
 }
 
 
-bool CHoppieConn::Message(bool cType, int mType, CString callsign, CString msg)
+bool CHoppieConn::Message(bool cType, int mType, CString cs, CString msg)
 {
 	netClear = false;
 
@@ -223,9 +218,9 @@ bool CHoppieConn::Message(bool cType, int mType, CString callsign, CString msg)
 	else if (cType == MSG_RECEIVE)
 		switch (mType)
 		{
-		case MSG_POLL: sType = "poll"; msg = ""; callsign = callsign; break;
-		case MSG_PEK:  sType = "peek"; msg = ""; callsign = callsign; break;
-		case MSG_PING: sType = "ping"; msg = "ALL-CALLSIGNS";  callsign = callsign; break;
+		case MSG_POLL: sType = "poll"; msg = ""; cs = callsign; break;
+		case MSG_PEK:  sType = "peek"; msg = ""; cs = callsign; break;
+		case MSG_PING: sType = "ping"; msg = "ALL-CALLSIGNS";  cs = callsign; break;
 		default: sType = "";
 		}
 
@@ -233,7 +228,7 @@ bool CHoppieConn::Message(bool cType, int mType, CString callsign, CString msg)
 	if (sType == "")
 	{
 		error = "WRONG TYPE";
-		format.Format("%s >> %s: %s (WRONG TYPE:%s)", callsign, callsign, msg, sType);
+		format.Format("%s >> %s: %s (WRONG TYPE:%s)", callsign, cs, msg, sType);
 		Logger::Log(format);
 		return false;
 	}
@@ -241,11 +236,11 @@ bool CHoppieConn::Message(bool cType, int mType, CString callsign, CString msg)
 	// Create URL String
 	// ex.: www.nl/acars/system/connect.html?type=ping&logon=CODE&from=TEST&to=TEST&packet=ALL-CALLSIGNS
 	m_mType = mType;
-	URI.Format("%s?type=%s&logon=%s&from=%s&to=%s&packet=%s", base, sType, logonCode, callsign, callsign, msg);
+	URI.Format("%s?type=%s&logon=%s&from=%s&to=%s&packet=%s", base, sType, logonCode, callsign, cs, msg);
 	AddDownload(_T("http://" + server + base + URI));
 
 	if (mType != MSG_PING && mType != MSG_POLL) {
-		format.Format("%s >> %s: %s (%s)", callsign, callsign, msg, sType);
+		format.Format("%s >> %s: %s (%s)", callsign, cs, msg, sType);
 		Logger::Log(format);
 	}
 	return true;
@@ -293,7 +288,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 	{
 		m_mType = -1;
 		error = strToken;
-		hoppieConnected = 2;
+		//hoppieConnected = true;
 		return;
 	}
 
@@ -350,7 +345,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 						{
 							iconify = false;
 
-							if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+							if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 							{
 								hoppieList.GetAt(posi).m_Connected = 2;
 								hoppieList.GetAt(posi).m_Voice.Insert(2, "LOGOFF/");
@@ -373,7 +368,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 							if ((pos = strToken.Mid(pos, j).Find("LOGON")) > -1)
 							{
 								// If AC is already Connected
-								if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									// Return "ALREADY CONNECTED"
 									Message(MSG_SEND, MSG_TELEX, sCallsign, "ALREADY CONNECTED");
@@ -389,12 +384,29 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 								// New AC
 								else
 								{
+									/*
+									if (m_VinicityAcList.GetAt(posi).m_SectorEntry >= 10)
+									{
+										msg.Format("/data2/%d/%d/NE/STANDBY", hoppie.cpdlcCounter, messageId);
+										hoppie.cpdlcCounter++;
+									
+										hoppieMsg(MSG_SEND, MSG_CPDLC, sCallsign, msg);
 
-									if ((posi = _SelectAcFromVinicityList(VICINITY_LIST, sCallsign)) != NULL)
+										CHoppieList aircraft;
+										aircraft.setVal(sCallsign, 3);
+										aircraft.m_Voice.Append("REQ LOGON/");
+										aircraft.m_VoiceId.Format("%d", messageId);
+									
+										hoppieList.AddTail(aircraft);
+									}
+									else
+									{
+									*/
+									if ((posi = _SelectAcFromVicinityList(VICINITY_LIST, sCallsign)) != NULL)
 									{
 										// Add to List and wait for Controller to answer Request
 										CHoppieList aircraft;
-										aircraft.setVal(sCallsign, 3);
+										aircraft.SetVal(sCallsign, 3);
 										aircraft.m_Voice.Append("REQ LOGON/");
 										aircraft.m_VoiceId.Format("%d", messageId);
 
@@ -404,7 +416,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 									{
 										// Add to List and wait for Controller to answer Request
 										CHoppieList aircraft;
-										aircraft.setVal(sCallsign, 3);
+										aircraft.SetVal(sCallsign, 3);
 										aircraft.m_Voice.Append("REQ LOGON/");
 										aircraft.m_VoiceId.Format("%d", messageId);
 
@@ -417,7 +429,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 								}
 							}//LOGON REQUEST
 							// VERTICAL REQUEST
-							else if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL && ((pos = strToken.Mid(pos, j).Find("CLIMB")) > -1 || (pos = strToken.Mid(pos, j).Find("DESCEND")) > -1 ||
+							else if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL && ((pos = strToken.Mid(pos, j).Find("CLIMB")) > -1 || (pos = strToken.Mid(pos, j).Find("DESCEND")) > -1 ||
 								(pos = strToken.Mid(pos, j).Find("CLMB")) > -1 || (pos = strToken.Mid(pos, j).Find("DES")) > -1 ||
 								(pos = strToken.Mid(pos, j).Find(" FL")) > -1 || (pos = strToken.Mid(pos, j).Find("@FL")) > -1))
 							{
@@ -470,7 +482,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 
 								}
 								// Forward Request to Controller
-								else if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								else if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									hoppieList.GetAt(posi).m_Level.Insert(2, "RF " + altitude + "/");
 									hoppieList.GetAt(posi).m_LevelId.Format("%d", messageId);
@@ -521,7 +533,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 
 								}
 								// Forward Request to Controller
-								else if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								else if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									hoppieList.GetAt(posi).m_Route.Insert(2, "RD " + waypoint + "/");
 									hoppieList.GetAt(posi).m_RouteId.Format("%d", messageId);
@@ -569,7 +581,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 								pos2 = strToken.Mid(pos, j).Find("/");
 								responseId = strToken.Mid(pos, pos2);
 
-								if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									if (responseId == hoppieList.GetAt(posi).m_LevelATCId)
 									{
@@ -652,7 +664,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 											return;
 										}
 									}//m_VoiceATCId
-								}//_SelectAcFromVinicityList
+								}//_SelectAcFromVicinityList
 							}//strToken[pos]
 
 							if (notificationSound)
@@ -682,7 +694,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 								pos2 = strToken.Mid(pos, j).Find("/");
 								responseId = strToken.Mid(pos, pos2);
 
-								if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									if (responseId == hoppieList.GetAt(posi).m_LevelATCId)
 									{
@@ -712,7 +724,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 
 										hoppieList.GetAt(posi).m_Voice.Insert(2, "UNA/");
 									}
-								}//_SelectAcFromVinicityList
+								}//_SelectAcFromVicinityList
 							}//strToken[pos]
 
 							if (notificationSound)
@@ -743,7 +755,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 								pos2 = strToken.Mid(pos, j).Find("/");
 								responseId = strToken.Mid(pos, pos2);
 
-								if ((posi = _SelectAcFromVinicityList(HOPPIE_LIST, sCallsign)) != NULL)
+								if ((posi = _SelectAcFromVicinityList(HOPPIE_LIST, sCallsign)) != NULL)
 								{
 									if (responseId == hoppieList.GetAt(posi).m_LevelATCId)
 									{
@@ -882,7 +894,7 @@ void CHoppieConn::OnAfterRequestFinish(FCHttpRequest& rTask)
 		}
 	}
 
-	hoppieConnected = 1;
+	//hoppieConnected = true;
 	m_mType = -1;
 }
 

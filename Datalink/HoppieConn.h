@@ -7,8 +7,9 @@
 class CHoppieConn : public FCHttpRequestManager
 {
 public:
-	int		hoppieConnected, cpdlcCounter, selectedItem, popupList, x, y, iconify, notificationSound, m_mType;
-	bool	withPDC, pdcConnected, euroscopeConnected, csOverride, asrLoaded, netClear;
+	int		cpdlcCounter, popupList, x, y, iconify, notificationSound, m_mType;
+	bool	hoppieConnected, withPDC, pdcConnected, euroscopeConnected, csOverride, asrLoaded, netClear;
+	CHoppieList *selectedItem;
 	CString error, logonCode, callsign;
 	CString	server = _T("www.hoppie.nl"), base = _T("/acars/system/connect.html");
 	CList<CString> data;
@@ -33,7 +34,7 @@ public:
 	void OnAfterRequestFinish(FCHttpRequest& rTask);
 	BOOL HoppiePing();
 
-	POSITION _SelectAcFromVinicityList(int listIdx, const char * sCallsign);
+	POSITION _SelectAcFromVicinityList(int listIdx, const char * sCallsign);
 	POSITION _SelectFixFromList(const char * fix);
 	//-----------------------------------------------------------------
 	//  Parameter :

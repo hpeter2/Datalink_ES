@@ -4,7 +4,7 @@
 
 
 #define MY_PLUGIN_NAME      "Datalink Plugin"
-#define MY_PLUGIN_VERSION   "2.0.0.1"
+#define MY_PLUGIN_VERSION   "2.0.0.2"
 #define MY_PLUGIN_DEVELOPER "Hendrik Peter"
 #define MY_PLUGIN_COPYRIGHT "Free to be distributed"
 #define MY_PLUGIN_VIEW      "Standard ES radar screen"
@@ -31,6 +31,21 @@ struct yController
 	CString spokenCallsign;
 };
 
+static CString GetCurrentDir()
+{
+	TCHAR tmpT[MAX_PATH] = _T("");
+	CString tempC = "";
+
+	DWORD len = GetModuleFileNameA(AfxGetInstanceHandle(), tmpT, MAX_PATH);
+	if (len == 0 || len >= MAX_PATH) strcpy(tmpT, "C:\\");
+
+	tempC = tmpT;
+	int pos = tempC.ReverseFind('\\');
+
+	if (pos > -1)
+		tempC.Delete(pos + 1, tempC.GetLength() - (pos + 1));
+	return tempC;
+}
 
 const COLORREF	COLOR_BLACK = RGB(1, 1, 1); //Window Framing
 const COLORREF	COLOR_WHITE = RGB(255, 254, 255); //Header Button Framing

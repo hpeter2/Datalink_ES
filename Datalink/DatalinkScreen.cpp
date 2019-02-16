@@ -11,9 +11,7 @@ CDatalinkScreen::CDatalinkScreen() :	util(S::getUtilInstance())
 	yOffset = 0;
 	buttonHighlight = -1;
 	buttonDown = -1;
-	util.buttonList = -1;
-	util.hoppie.selectedItem = -1;
-	
+	util.buttonList = -1;	
 
 	hidden = false;
 	listOpen = false;
@@ -154,18 +152,21 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 	// Only in first phase && Don't Draw, if Window hidden
 	if (Phase != EuroScopePlugIn::REFRESH_PHASE_AFTER_LISTS || hidden)
 		return;
-
+	
 	// If no Item or an Deleted Item is Selected, select last One by default.
-	if (util.hoppie.selectedItem == -1) {
-		if (util.hoppie.hoppieList.GetCount() > 0)
-			util.hoppie.selectedItem = util.hoppie.hoppieList.GetCount() - 1;
+	if (util.hoppie.selectedItem->IsEmpty() && util.hoppie.hoppieList.GetCount() > 0) {		
+		util.hoppie.selectedItem = &util.hoppie.hoppieList.GetTail();
+		util.hoppie.selectedItem->m_SelectedIdx = util.hoppie.hoppieList.GetCount() - 1;
 	}
-	else if (util.hoppie.selectedItem >= util.hoppie.hoppieList.GetCount()) {
-		if (util.hoppie.hoppieList.GetCount() > 0)
-			util.hoppie.selectedItem = util.hoppie.hoppieList.GetCount() - 1;
+	else if (util.hoppie.selectedItem->m_SelectedIdx >= util.hoppie.hoppieList.GetCount()) {
+		if (util.hoppie.hoppieList.GetCount() > 0) {
+			util.hoppie.selectedItem = &util.hoppie.hoppieList.GetTail();
+			util.hoppie.selectedItem->m_SelectedIdx = util.hoppie.hoppieList.GetCount() - 1;
+		}
 		else
-			util.hoppie.selectedItem = -1;
+			util.hoppie.selectedItem = new CHoppieList();
 	}
+		
 
 	//------------------------------------------------------------------
 	//------------------------------------------------------------------
@@ -189,8 +190,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 
 	orig_font = dc.SelectObject(&data_font);
 	orig_pen = dc.SelectObject(&black_pen);
-
-
+	
 	//------------------------------------------------------------------
 	//------------------------------------------------------------------
 	//  Set Frame Area to x & y (loaded or default Value)
@@ -288,7 +288,8 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 		{
 			if (util.hoppie.hoppieList.GetCount() != 0)
 			{
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected != 5)
+				CHoppieList item = util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i));
+				if (item.m_Connected != 5)
 				{
 					// Current Row
 					rSub[3].SetRect(rSub[3].left, rSub[3].bottom, rSub[3].right, rSub[3].bottom + 22);
@@ -300,7 +301,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 					//------------------------------------------------------------------
 
 
-					if (i == util.hoppie.selectedItem)
+					if (&item == util.hoppie.selectedItem)
 						mdc->SelectObject(b_aircraftSelected);
 					else
 						mdc->SelectObject(b_aircraft);
@@ -317,50 +318,50 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 					//------------------------------------------------------------------
 					if (util.hoppie.hoppieList.GetCount() != 0)
 					{
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelTimer >= 120)
+						if (item.m_LevelTimer >= 120)
 						{
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelTimer = 0;
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelATCId = "";
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Level.Insert(2, "NRPLY/\0");
+							item.m_LevelTimer = 0;
+							item.m_LevelATCId = "";
+							item.m_Level.Insert(2, "NRPLY/\0");
 						}
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteTimer >= 120)
+						if (item.m_RouteTimer >= 120)
 						{
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteTimer = 0;
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteATCId = "";
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Route.Insert(2, "NRPLY/\0");
+							item.m_RouteTimer = 0;
+							item.m_RouteATCId = "";
+							item.m_Route.Insert(2, "NRPLY/\0");
 						}
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRTimer >= 120)
+						if (item.m_SSRTimer >= 120)
 						{
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRTimer = 0;
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRATCId = "";
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSR.Insert(2, "NRPLY/\0");
+							item.m_SSRTimer = 0;
+							item.m_SSRATCId = "";
+							item.m_SSR.Insert(2, "NRPLY/\0");
 						}
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceTimer >= 120)
+						if (item.m_VoiceTimer >= 120)
 						{
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceTimer = 0;
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceATCId = "";
-							util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Voice.Insert(2, "NRPLY/\0");
+							item.m_VoiceTimer = 0;
+							item.m_VoiceATCId = "";
+							item.m_Voice.Insert(2, "NRPLY/\0");
 						}
 
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 0 || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 4)
+						if (item.m_Connected == 0 || item.m_Connected == 4)
 							dc.SetTextColor(COLOR_ERROR); //CONN LOSS
 
-						else if (i == util.hoppie.selectedItem && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 2)
+						else if (&item == util.hoppie.selectedItem && item.m_Connected == 2)
 							dc.SetTextColor(COLOR_FRAME_HIGHLIGHT); //FIX: OTHER COLOR ON LOGOFF REQUEST
 
-						else if (i != util.hoppie.selectedItem && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 2)
+						else if (&item != util.hoppie.selectedItem && item.m_Connected == 2)
 							dc.SetTextColor(COLOR_FRAME); //FIX: OTHER COLOR ON LOGOFF REQUEST
 
-						else if ((util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelATCId != "" && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelTimer >= 30) || (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteATCId != "" && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteTimer >= 30) || (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRATCId != "" && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRTimer >= 30) || (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceATCId != "" && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceTimer >= 30))
+						else if ((item.m_LevelATCId != "" && item.m_LevelTimer >= 30) || (item.m_RouteATCId != "" && item.m_RouteTimer >= 30) || (item.m_SSRATCId != "" && item.m_SSRTimer >= 30) || (item.m_VoiceATCId != "" && item.m_VoiceTimer >= 30))
 							dc.SetTextColor(COLOR_ERROR); //UNANSWERED AC MESSAGE
 
-						else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceId != "")
+						else if (item.m_LevelId != "" || item.m_RouteId != "" || item.m_SSRId != "" || item.m_VoiceId != "")
 							dc.SetTextColor(COLOR_GREEN); //UNANSWERED AC MESSAGE
 
-						else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_LevelATCId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_RouteATCId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_SSRATCId != "" || util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_VoiceATCId != "")
+						else if (item.m_LevelATCId != "" || item.m_RouteATCId != "" || item.m_SSRATCId != "" || item.m_VoiceATCId != "")
 							dc.SetTextColor(COLOR_GREEN); //UNANSWERED ATC MESSAGE
 
-						else if (i == util.hoppie.selectedItem)
+						else if (&item == util.hoppie.selectedItem)
 							dc.SetTextColor(COLOR_WHITE);
 						else
 							dc.SetTextColor(COLOR_BLUE_HIGHLIGHT);
@@ -371,11 +372,11 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 						rSub[3].left += 5;
 
 
-						if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Connected == 6) {
-							dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign.GetBuffer(0), -1, rSub[3], DT_SINGLELINE | DT_VCENTER | DT_LEFT, NULL);
+						if (item.m_Connected == 6) {
+							dc.DrawTextEx(item.m_Callsign.GetBuffer(0), -1, rSub[3], DT_SINGLELINE | DT_VCENTER | DT_LEFT, NULL);
 						}
 						else
-							dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(i)).m_Callsign.GetBuffer(0), -1, rSub[3], DT_SINGLELINE | DT_VCENTER | DT_LEFT, NULL);
+							dc.DrawTextEx(item.m_Callsign.GetBuffer(0), -1, rSub[3], DT_SINGLELINE | DT_VCENTER | DT_LEFT, NULL);
 						rSub[3].left -= 5;
 						rSub[3].top -= 2;
 					}
@@ -407,22 +408,24 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 		// Create next Rect's based on rSub[3] (AC List)
 		rSub[10].SetRect(rDataLink.left + 1, rSub[3].bottom, rDataLink.right - 1, rSub[3].bottom + 100);	//DATA FRAME
 
-		rSub[4].SetRect(rDataLink.left, rDataLink.bottom - 26, rDataLink.left + 59, rDataLink.bottom - 2); //LVL
-		rSub[5].SetRect(rSub[4].right + 2, rSub[4].top, rSub[4].right + 60, rSub[4].bottom); //ROUTE
-		rSub[6].SetRect(rSub[5].right + 2, rSub[5].top, rSub[5].right + 60, rSub[5].bottom); //CONT
-		rSub[7].SetRect(rSub[6].right + 2, rSub[6].top, rSub[6].right + 60, rSub[6].bottom); //SSR
-		rSub[8].SetRect(rSub[7].right + 2, rSub[7].top, rSub[7].right + 109, rSub[7].bottom); //RST/STANDBY
-		rSub[9].SetRect(rSub[8].right + 2, rSub[8].top, rDataLink.right, rSub[8].bottom);	//MIKE
+		rSub[4].SetRect(rDataLink.left, rSub[10].bottom, rDataLink.left + 59, rSub[10].bottom + 26); //LVL
+		rSub[5].SetRect(rSub[4].right + 2, rSub[4].top, rSub[4].right + 60, rSub[10].bottom + 26); //ROUTE
+		rSub[6].SetRect(rSub[5].right + 2, rSub[5].top, rSub[5].right + 60, rSub[10].bottom + 26); //CONT
+		rSub[7].SetRect(rSub[6].right + 2, rSub[6].top, rSub[6].right + 60, rSub[10].bottom + 26); //SSR
+		rSub[8].SetRect(rSub[7].right + 2, rSub[7].top, rSub[7].right + 109, rSub[10].bottom + 26); //RST/STANDBY
+		rSub[9].SetRect(rSub[8].right + 2, rSub[8].top, rDataLink.right, rSub[10].bottom + 26);	//MIKE
+
+		mdc->SelectObject(b_btn1[L_LOGON]);
+		dc.BitBlt(rSub[4].left, rSub[4].top, rSub[4].right, 26, mdc, 0, 0, SRCCOPY);
 
 
 		// Draw Bottom Bitmap (Data Frame && Buttons)
 		mdc->SelectObject(b_data);
 		dc.BitBlt(rDataLink.left, rSub[10].top, rDataLink.right, 101, mdc, 0, 0, SRCCOPY);
-
-
-		if (util.hoppie.selectedItem > -1)
+		
+		if (!util.hoppie.selectedItem->IsEmpty())
 		{
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected == 3)
+			if (util.hoppie.selectedItem->m_Connected == 3)
 			{
 				mdc->SelectObject(b_btn1[L_LOGON]);
 				dc.BitBlt(rSub[4].left, rSub[4].top, rSub[4].right, 26, mdc, 0, 0, SRCCOPY);
@@ -442,7 +445,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 				mdc->SelectObject(b_btn6[L_LOGON]);
 				dc.BitBlt(rSub[9].left, rSub[9].top, rSub[9].right, 26, mdc, 0, 0, SRCCOPY);
 			}
-			else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected == 6)
+			else if (util.hoppie.selectedItem->m_Connected == 6)
 			{
 				mdc->SelectObject(b_btn1[L_DCL]);
 				dc.BitBlt(rSub[4].left, rSub[4].top, rSub[4].right, 26, mdc, 0, 0, SRCCOPY);
@@ -464,7 +467,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			}
 			else
 			{
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelATCId != "")
+				if (util.hoppie.selectedItem->m_LevelATCId != "")
 					mdc->SelectObject(b_btn1[L_OFF]);
 				else
 					mdc->SelectObject(b_btn1[L_DEF]);
@@ -472,7 +475,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 				dc.BitBlt(rSub[4].left, rSub[4].top, rSub[4].right, 26, mdc, 0, 0, SRCCOPY);
 
 
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteATCId != "")
+				if (util.hoppie.selectedItem->m_RouteATCId != "")
 					mdc->SelectObject(b_btn2[L_OFF]);
 				else
 					mdc->SelectObject(b_btn2[L_DEF]);
@@ -480,7 +483,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 				dc.BitBlt(rSub[5].left, rSub[5].top, rSub[5].right, 26, mdc, 0, 0, SRCCOPY);
 
 
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId != "")
+				if (util.hoppie.selectedItem->m_VoiceATCId != "")
 					mdc->SelectObject(b_btn3[L_OFF]);
 				else
 					mdc->SelectObject(b_btn3[L_DEF]);
@@ -488,7 +491,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 				dc.BitBlt(rSub[6].left, rSub[6].top, rSub[6].right, 26, mdc, 0, 0, SRCCOPY);
 
 
-				if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRATCId != "")
+				if (util.hoppie.selectedItem->m_SSRATCId != "")
 					mdc->SelectObject(b_btn4[L_OFF]);
 				else
 					mdc->SelectObject(b_btn4[L_DEF]);
@@ -546,7 +549,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 		//------------------------------------------------------------------
 		//  Fill Data Frame with Data, if an Aircraft is selected (i.e. the List is not empty)
 		//------------------------------------------------------------------
-		if (util.hoppie.selectedItem != -1)
+		if (!util.hoppie.selectedItem->IsEmpty())
 		{
 			// CALLSIGN
 			dc.SetTextColor(COLOR_BLUE_HIGHLIGHT);
@@ -555,15 +558,15 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			rSub[10].top += 6;
 			rSub[10].left += 5;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected == 6) {
-				dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+			if (util.hoppie.selectedItem->m_Connected == 6) {
+				dc.DrawTextEx(util.hoppie.selectedItem->m_Callsign.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 			}
 			else
-				dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+				dc.DrawTextEx(util.hoppie.selectedItem->m_Callsign.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 
 
 			// TEXT AFTER CALLSIGN 
-			rSub[10].left += strlen(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign) * 9 + 9;
+			rSub[10].left += strlen(util.hoppie.selectedItem->m_Callsign) * 9 + 9;
 
 			if (util.hoppie.error != "")
 				data[0] = util.hoppie.error;
@@ -612,22 +615,22 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 
 			data[1] = "L ";
 
-			dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+			dc.DrawTextEx(util.hoppie.selectedItem->m_Level.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 
 
 			// ROUTE
 			rSub[10].top += 20;
-			dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+			dc.DrawTextEx(util.hoppie.selectedItem->m_Route.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 
 
 			// VOICE
 			rSub[10].top += 20;
-			dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+			dc.DrawTextEx(util.hoppie.selectedItem->m_Voice.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 
 
 			// INFO
 			rSub[10].top += 20;
-			dc.DrawTextEx(util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSR.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
+			dc.DrawTextEx(util.hoppie.selectedItem->m_SSR.GetBuffer(0), -1, rSub[10], DT_SINGLELINE | DT_TOP | DT_LEFT, NULL);
 
 			rSub[10].left -= 5 - 2;
 			rSub[10].top -= 6 - 17 - 20 - 20 - 20;
@@ -646,7 +649,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 	// Header
 	if (!util.hoppie.hoppieConnected && util.hoppie.error == "")
 		mdc->SelectObject(b_header[L_DEF]);
-	else if (util.hoppie.hoppieConnected == 1)
+	else if (util.hoppie.hoppieConnected)
 		mdc->SelectObject(b_header[L_ON]);
 	else
 		mdc->SelectObject(b_header[L_ERR]);
@@ -678,9 +681,9 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 	//  Don't Register them, if a Submenu is displayed over them
 	//------------------------------------------------------------------
 
-	if (util.hoppie.selectedItem != -1)
+	if (!util.hoppie.selectedItem->IsEmpty())
 	{
-		if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected == 3)
+		if (util.hoppie.selectedItem->m_Connected == 3)
 		{
 			AddScreenObject(BUTTON_ACC, "DATALINK_LVL", rSub[4], false, NULL);
 			AddScreenObject(BUTTON_SBY, "DATALINK_ROUTE", rSub[5], false, NULL);
@@ -690,7 +693,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 
 			util.buttonList = -1;
 		}
-		else if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected == 6)
+		else if (util.hoppie.selectedItem->m_Connected == 6)
 		{
 			//AddScreenObject(BUTTON_DCL_DCL, "DATALINK_LVL", rSub[4], false, NULL);
 			//AddScreenObject(BUTTON_DCL_UNA, "DATALINK_ROUTE", rSub[5], false, NULL);
@@ -699,14 +702,14 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 		}
 		else
 		{
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelATCId == "")
+			if (util.hoppie.selectedItem->m_LevelATCId == "")
 				AddScreenObject(BUTTON_LVL, "DATALINK_LVL", rSub[4], false, NULL);
 
-			if (util.buttonList != BUTTON_LVL && util.buttonList != BUTTON_LVL_EX && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteATCId == "")
+			if (util.buttonList != BUTTON_LVL && util.buttonList != BUTTON_LVL_EX && util.hoppie.selectedItem->m_RouteATCId == "")
 				AddScreenObject(BUTTON_ROUTE, "DATALINK_ROUTE", rSub[5], false, NULL);
-			if (util.buttonList != BUTTON_ROUTE && util.buttonList != BUTTON_ROUTE_EX && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId == "")
+			if (util.buttonList != BUTTON_ROUTE && util.buttonList != BUTTON_ROUTE_EX && util.hoppie.selectedItem->m_VoiceATCId == "")
 				AddScreenObject(BUTTON_VCI, "DATALINK_CONT", rSub[6], false, NULL);
-			if (util.buttonList != BUTTON_VCI && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRATCId == "")
+			if (util.buttonList != BUTTON_VCI && util.hoppie.selectedItem->m_SSRATCId == "")
 				AddScreenObject(BUTTON_SSR, "DATALINK_SSR", rSub[7], false, NULL);
 			//if (util.buttonList != BUTTON_SSR && util.buttonList != BUTTON_MIKE) 
 			//	AddScreenObject(BUTTON_RST, "DATALINK_RST", rSub[8], false, NULL);
@@ -746,7 +749,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.left = rSub[5].left;
 			util.listRect.right = rSub[5].left + 105;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
+			if (util.hoppie.selectedItem->m_LevelId != "")
 				mdc->SelectObject(b_lvl[L_RPLY]);
 			else
 				mdc->SelectObject(b_lvl[L_DEF]);
@@ -775,7 +778,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.left = rSub[6].left;
 			util.listRect.right = rSub[6].left + 105;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
+			if (util.hoppie.selectedItem->m_RouteId != "")
 				mdc->SelectObject(b_route[L_RPLY]);
 			else
 				mdc->SelectObject(b_route[L_DEF]);
@@ -842,7 +845,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.top = util.listRect.bottom + 3;
 			util.listRect.bottom = util.listRect.top + 27;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
+			if (util.hoppie.selectedItem->m_LevelId != "")
 				AddScreenObject(BUTTON_LVL_SBY, "DATALINK_LVL", util.listRect, false, NULL);
 
 			//AddScreenObject(BUTTON_MAXROC, "DATALINK_LVL", util.listRect, false, NULL);
@@ -851,7 +854,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.top = util.listRect.bottom + 3;
 			util.listRect.bottom = util.listRect.top + 27;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
+			if (util.hoppie.selectedItem->m_LevelId != "")
 				AddScreenObject(BUTTON_LVL_UNA, "DATALINK_LVL", util.listRect, false, NULL);
 
 			//AddScreenObject(BUTTON_MINROC, "DATALINK_LVL", util.listRect, false, NULL);
@@ -902,7 +905,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.top = util.listRect.bottom + 3;
 			util.listRect.bottom = util.listRect.top + 27;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
+			if (util.hoppie.selectedItem->m_RouteId != "")
 				AddScreenObject(BUTTON_ROUTE_SBY, "DATALINK_ROUTE", util.listRect, false, NULL);
 			else
 				AddScreenObject(BUTTON_TURNLDEG, "DATALINK_ROUTE", util.listRect, false, NULL);
@@ -912,7 +915,7 @@ void    CDatalinkScreen::OnRefresh(HDC hDC, int Phase)
 			util.listRect.top = util.listRect.bottom + 3;
 			util.listRect.bottom = util.listRect.top + 27;
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
+			if (util.hoppie.selectedItem->m_RouteId != "")
 				AddScreenObject(BUTTON_ROUTE_UNA, "DATALINK_ROUTE", util.listRect, false, NULL);
 			else
 				AddScreenObject(BUTTON_TURNRDEG, "DATALINK_ROUTE", util.listRect, false, NULL);
@@ -1111,7 +1114,7 @@ void    CDatalinkScreen::OnButtonDownScreenObject(int ObjectType, const char * s
 	if ((ObjectType == BUTTON_LVL || ObjectType == BUTTON_ROUTE || ObjectType == BUTTON_VCI ||
 		ObjectType == BUTTON_SSR || ObjectType == BUTTON_MIKE ||
 		ObjectType == BUTTON_ACC || ObjectType == BUTTON_SBY || ObjectType == BUTTON_UNA ||
-		ObjectType == BUTTON_UDT || ObjectType == BUTTON_UDA) && util.buttonList == -1 && util.hoppie.selectedItem > -1) {
+		ObjectType == BUTTON_UDT || ObjectType == BUTTON_UDA) && util.buttonList == -1 && !util.hoppie.selectedItem->IsEmpty()) {
 		buttonDown = ObjectType;
 		RequestRefresh();
 	}
@@ -1130,7 +1133,7 @@ void    CDatalinkScreen::OnButtonDownScreenObject(int ObjectType, const char * s
 void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sObjectId, POINT Pt, RECT Area, int Button) 
 {
 	if ((ObjectType == BUTTON_LVL || ObjectType == BUTTON_ROUTE || ObjectType == BUTTON_VCI ||
-		ObjectType == BUTTON_SSR || ObjectType == BUTTON_MIKE) && util.buttonList == -1 && util.hoppie.selectedItem > -1)
+		ObjectType == BUTTON_SSR || ObjectType == BUTTON_MIKE) && util.buttonList == -1 && !util.hoppie.selectedItem->IsEmpty())
 	{
 		buttonDown = -1;
 		buttonHighlight = -1;
@@ -1141,7 +1144,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		RequestRefresh();
 	}
-	else if (ObjectType == BUTTON_SBY && util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Logon == -1)
+	else if (ObjectType == BUTTON_SBY && util.hoppie.selectedItem->m_Logon == -1)
 	{
 		buttonDown = -1;
 		buttonHighlight = -1;
@@ -1157,40 +1160,40 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		switch (ObjectType)
 		{
-		case BUTTON_ACC:msg = "ACC/"; answer = "LOGON ACCEPTED"; util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 1; break;
+		case BUTTON_ACC:msg = "ACC/"; answer = "LOGON ACCEPTED"; util.hoppie.selectedItem->m_Connected = 1; break;
 		case BUTTON_SBY:msg = "SBY/"; answer = "STANDBY"; break;
-		case BUTTON_UNA:msg = "UNA/"; answer = "UNABLE"; util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 2; break;
-		case BUTTON_UDT:msg = "UDT/"; answer = "UNABLE DUE TO TRAFFIC"; util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 2; break;
-		case BUTTON_UDA:msg = "UDA/"; answer = "UNABLE DUE TO AIRSPACE"; util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 2; break;
+		case BUTTON_UNA:msg = "UNA/"; answer = "UNABLE"; util.hoppie.selectedItem->m_Connected = 2; break;
+		case BUTTON_UDT:msg = "UDT/"; answer = "UNABLE DUE TO TRAFFIC"; util.hoppie.selectedItem->m_Connected = 2; break;
+		case BUTTON_UDA:msg = "UDA/"; answer = "UNABLE DUE TO AIRSPACE"; util.hoppie.selectedItem->m_Connected = 2; break;
 		}
 
 		if (ObjectType != BUTTON_SBY)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Logon = 1;
+			util.hoppie.selectedItem->m_Logon = 1;
 
-			if ((pos = util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Find("SBY/")) > -1)
-				util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Delete(pos, 4);
+			if ((pos = util.hoppie.selectedItem->m_Voice.Find("SBY/")) > -1)
+				util.hoppie.selectedItem->m_Voice.Delete(pos, 4);
 		}
 		else
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Logon = -1;
+			util.hoppie.selectedItem->m_Logon = -1;
 		}
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, msg);
+		util.hoppie.selectedItem->m_Voice.Insert(2, msg);
 
 
-		msg.Format("/data2/%d/%s/NE/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId, answer);
+		msg.Format("/data2/%d/%s/NE/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_VoiceId, answer);
 		util.hoppie.cpdlcCounter++;
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 		//if (ObjectType == BUTTON_ACC)
 		//{
 		//	msg.Format("/data2/%d//NE/%s", hoppie.cpdlcCounter, hoppie.callsign);
 		//	hoppie.cpdlcCounter++;
-		//	util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		//	util.hoppie.selectedItem->m_Relay->AddTail(msg);
 		//}
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
+		util.hoppie.selectedItem->m_VoiceId = "";
 		util.hoppie.SetConfInt("counter", util.hoppie.cpdlcCounter);
 
 		RequestRefresh();
@@ -1205,19 +1208,19 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		CString msg, answer;
 
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign);
+		POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign);
 
 		if (pos != NULL)
 		{
 			data[5] = "";
 
 			msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "SQUAWK IDENT" + data[5]);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSR.Insert(2, "SQWK IDENT" + data[5] + '/');
+			util.hoppie.selectedItem->m_SSR.Insert(2, "SQWK IDENT" + data[5] + '/');
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+			util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRATCId.Format("%d", util.hoppie.cpdlcCounter);
+			util.hoppie.selectedItem->m_SSRId = "";
+			util.hoppie.selectedItem->m_SSRATCId.Format("%d", util.hoppie.cpdlcCounter);
 
 			util.hoppie.cpdlcCounter++;
 
@@ -1239,61 +1242,19 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		CString msg, answer;
 
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign);
+		POSITION pos = util.hoppie._SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign);
 
 		if (pos != NULL)
 		{
 			data[5] = util.hoppie.m_VinicityAcList.GetAt(pos).m_Squawk;
 
 			msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "SQUAWK " + data[5]);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSR.Insert(2, "SQWK " + data[5] + '/');
+			util.hoppie.selectedItem->m_SSR.Insert(2, "SQWK " + data[5] + '/');
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+			util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRATCId.Format("%d", util.hoppie.cpdlcCounter);
-
-			util.hoppie.cpdlcCounter++;
-		}
-
-		data[0] = "";
-		data[5] = "";
-
-		util.hoppie.SetConfInt("counter", util.hoppie.cpdlcCounter);
-		RequestRefresh();
-
-	}
-	else if (ObjectType == BUTTON_LOGOFF)
-	{
-		buttonDown = -1;
-		buttonHighlight = -1;
-		util.buttonList = -1;
-		listOpen = false;
-		util.hoppie.popupList = -1;
-
-		CString msg, answer;
-
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign);
-
-		if (pos != NULL)
-		{
-			data[5] = "";
-
-			msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "LOGOFF" + data[5]);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, "LOGOFF" + data[5] + '/');
-
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
-
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelATCId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteATCId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_SSRATCId = "";
-
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 2;
+			util.hoppie.selectedItem->m_SSRId = "";
+			util.hoppie.selectedItem->m_SSRATCId.Format("%d", util.hoppie.cpdlcCounter);
 
 			util.hoppie.cpdlcCounter++;
 		}
@@ -1307,6 +1268,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 	}
 	else if (ObjectType == BUTTON_PDC || ObjectType == BUTTON_DCL_DCL)
 	{
+		// TODO: PDC/DCL
 		/*
 		if (strlen(data[5]) <= 0)
 		{
@@ -1322,7 +1284,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		CString msg, answer;
 
-		POSITION pos = _SelectAcFromVinicityList(CONTROLLER_LIST, data[5]);
+		POSITION pos = _SelectAcFromVicinityList(CONTROLLER_LIST, data[5]);
 
 		if (pos != NULL)
 		{
@@ -1333,7 +1295,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 			data[5] = " @\0";
 		}
 
-		pos = _SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign);
+		pos = _SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign);
 
 		if (pos != NULL)
 		{
@@ -1378,7 +1340,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 				atis = "\0";
 			}
 
-			//msg.Format("/data2/%d//WU/%s%s%s%s%s%s%s%s%s%s", hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign, " CLRD TO @",
+			//msg.Format("/data2/%d//WU/%s%s%s%s%s%s%s%s%s%s", hoppie.cpdlcCounter, util.hoppie.selectedItem->m_Callsign, " CLRD TO @",
 			//		   m_VinicityAcList.GetAt(pos).m_Destination, "@ OFF @", m_VinicityAcList.GetAt(pos).m_Runway, "@ VIA @", m_VinicityAcList.GetAt(pos).m_SID, " @ SQUAWK @",
 			//		   m_VinicityAcList.GetAt(pos).m_Squawk, data[5]);
 			if (ObjectType == BUTTON_DCL_DCL)
@@ -1406,12 +1368,12 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 			//hoppieMsg(MSG_SEND, MSG_TELEX, sCallsign, format);
 
 			data[5].Format("DCL|%s|%s|%s/", m_VinicityAcList.GetAt(pos).m_Destination, m_VinicityAcList.GetAt(pos).m_SID, m_VinicityAcList.GetAt(pos).m_Squawk);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, data[5]);
+			util.hoppie.selectedItem->m_Voice.Insert(2, data[5]);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+			util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId.Format("%d", hoppie.cpdlcCounter);
+			util.hoppie.selectedItem->m_VoiceId = "";
+			util.hoppie.selectedItem->m_VoiceATCId.Format("%d", hoppie.cpdlcCounter);
 
 			hoppie.cpdlcCounter++;
 		}
@@ -1429,6 +1391,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 	}
 	else if (ObjectType == BUTTON_DCL_DCL)
 	{
+		// Will never reach due to if BUTTON_PDC before
 		/*
 		if (strlen(data[5]) <= 0)
 		{
@@ -1444,7 +1407,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		CString msg, answer;
 
-		POSITION pos = _SelectAcFromVinicityList(CONTROLLER_LIST, data[5]);
+		POSITION pos = _SelectAcFromVicinityList(CONTROLLER_LIST, data[5]);
 
 		if (pos != NULL)
 		{
@@ -1455,23 +1418,23 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 			data[5] = "@ \0";
 		}
 
-		pos = _SelectAcFromVinicityList(VICINITY_LIST, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign);
+		pos = _SelectAcFromVicinityList(VICINITY_LIST, util.hoppie.selectedItem->m_Callsign);
 
 		if (pos != NULL)
 		{
 
-			msg.Format("/data2/%d//WU/%s%s%s%s%s%s%s%s%s%s", hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Callsign, " CLRD TO @",
+			msg.Format("/data2/%d//WU/%s%s%s%s%s%s%s%s%s%s", hoppie.cpdlcCounter, util.hoppie.selectedItem->m_Callsign, " CLRD TO @",
 				m_VinicityAcList.GetAt(pos).m_Destination, "@ OFF @", m_VinicityAcList.GetAt(pos).m_Runway, "@ VIA @", m_VinicityAcList.GetAt(pos).m_SID, " @ SQUAWK @",
 				m_VinicityAcList.GetAt(pos).m_Squawk, data[5]);
 			msg = "Test";
 
 			data[5].Format("PDC|%s|%s|%s/", m_VinicityAcList.GetAt(pos).m_Destination, m_VinicityAcList.GetAt(pos).m_SID, m_VinicityAcList.GetAt(pos).m_Squawk);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, data[5]);
+			util.hoppie.selectedItem->m_Voice.Insert(2, data[5]);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+			util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId.Format("%d", hoppie.cpdlcCounter);
+			util.hoppie.selectedItem->m_VoiceId = "";
+			util.hoppie.selectedItem->m_VoiceATCId.Format("%d", hoppie.cpdlcCounter);
 
 			hoppie.cpdlcCounter++;
 		}
@@ -1503,7 +1466,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		CString msg, answer;
 
-		POSITION pos = util.hoppie._SelectAcFromVinicityList(CONTROLLER_LIST, data[5]);
+		POSITION pos = util.hoppie._SelectAcFromVicinityList(CONTROLLER_LIST, data[5]);
 		if (pos != NULL)
 		{
 			if (util.hoppie.controller.GetAt(pos).facility == 1 || util.hoppie.controller.GetAt(pos).facility == 6)
@@ -1562,7 +1525,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 				}
 			}
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_NextStation = data[5];
+			util.hoppie.selectedItem->m_NextStation = data[5];
 
 			if (strlen(util.hoppie.controller.GetAt(pos).spokenCallsign) > 0)
 			{
@@ -1580,12 +1543,12 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 			msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "CONTACT " + data[5]);
 
 			data[5].Format("%.3f", util.hoppie.controller.GetAt(pos).freq);
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, "CNTCT " + data[5] + '/');
+			util.hoppie.selectedItem->m_Voice.Insert(2, "CNTCT " + data[5] + '/');
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+			util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId.Format("%d", util.hoppie.cpdlcCounter);
+			util.hoppie.selectedItem->m_VoiceId = "";
+			util.hoppie.selectedItem->m_VoiceATCId.Format("%d", util.hoppie.cpdlcCounter);
 
 			util.hoppie.cpdlcCounter++;
 		}
@@ -1612,9 +1575,9 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 			data[5] = "\0";
 
 		msg.Format("/data2/%d//NE/%s", util.hoppie.cpdlcCounter, "CHECK STUCK MICROPHONE" + data[5]);
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Voice.Insert(2, "CHK STUCK MIC/");
+		util.hoppie.selectedItem->m_Voice.Insert(2, "CHK STUCK MIC/");
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 		util.hoppie.cpdlcCounter++;
 		data[0] = "";
@@ -1669,14 +1632,14 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 		CString msg;
 
 		msg.Format("/data2/%d//N/%s", util.hoppie.cpdlcCounter, "LOGOFF\0");
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "LOGOFF/");
+		util.hoppie.selectedItem->m_Level.Insert(2, "LOGOFF/");
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Connected = 2;
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceId = "";
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_VoiceATCId = "";
+		util.hoppie.selectedItem->m_Connected = 2;
+		util.hoppie.selectedItem->m_VoiceId = "";
+		util.hoppie.selectedItem->m_VoiceATCId = "";
 		util.hoppie.cpdlcCounter++;
 		data[0] = "";
 		data[5] = "";
@@ -1697,15 +1660,15 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		if (ObjectType == BUTTON_LVL_SBY)
 		{
-			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId, "STANDBY\0");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "SBY/");
+			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_LevelId, "STANDBY\0");
+			util.hoppie.selectedItem->m_Level.Insert(2, "SBY/");
 		}
 		else
 		{
-			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "STANDBY\0");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "SBY/");
+			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "STANDBY\0");
+			util.hoppie.selectedItem->m_Route.Insert(2, "SBY/");
 		}
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 
 		util.hoppie.cpdlcCounter++;
@@ -1728,17 +1691,17 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		if (ObjectType == BUTTON_LVL_UNA)
 		{
-			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId, "UNABLE\0");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "UNA/");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId = "";
+			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_LevelId, "UNABLE\0");
+			util.hoppie.selectedItem->m_Level.Insert(2, "UNA/");
+			util.hoppie.selectedItem->m_LevelId = "";
 		}
 		else
 		{
-			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "UNABLE\0");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "UNA/");
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId = "";
+			msg.Format("/data2/%d/%s/N/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "UNABLE\0");
+			util.hoppie.selectedItem->m_Route.Insert(2, "UNA/");
+			util.hoppie.selectedItem->m_RouteId = "";
 		}
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 
 		util.hoppie.cpdlcCounter++;
@@ -1773,39 +1736,39 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		if (data[0].Find("CLIMB") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "CLMB " + data[5] + '/');
+			util.hoppie.selectedItem->m_Level.Insert(2, "CLMB " + data[5] + '/');
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId, "CLIMB TO FL" + data[5]);
+			if (util.hoppie.selectedItem->m_LevelId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_LevelId, "CLIMB TO FL" + data[5]);
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "CLIMB TO FL" + data[5]);
 
 		}
 		else if (data[0].Find("DESCEND") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "DESC " + data[5] + '/');
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId, "DESCEND TO FL" + data[5]);
+			util.hoppie.selectedItem->m_Level.Insert(2, "DESC " + data[5] + '/');
+			if (util.hoppie.selectedItem->m_LevelId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_LevelId, "DESCEND TO FL" + data[5]);
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "DESCEND TO FL" + data[5]);
 
 		}
 		else if (data[0].Find("MAINTAIN") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Level.Insert(2, "MAINTN " + data[5] + '/');
+			util.hoppie.selectedItem->m_Level.Insert(2, "MAINTN " + data[5] + '/');
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId, "MAINTAIN FL" + data[5]);
+			if (util.hoppie.selectedItem->m_LevelId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_LevelId, "MAINTAIN FL" + data[5]);
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "MAINTAIN FL" + data[5]);
 
 		}
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayLvl = atoi(data[5]);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_RelayLvl = atoi(data[5]);
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelId = "";
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_LevelATCId.Format("%d", util.hoppie.cpdlcCounter);
+		util.hoppie.selectedItem->m_LevelId = "";
+		util.hoppie.selectedItem->m_LevelATCId.Format("%d", util.hoppie.cpdlcCounter);
 		util.hoppie.cpdlcCounter++;
 		data[0] = "";
 		data[5] = "";
@@ -1829,7 +1792,7 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 
 		if (data[0].Find("DCT") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "DCT TO " + data[5] + '/');
+			util.hoppie.selectedItem->m_Route.Insert(2, "DCT TO " + data[5] + '/');
 
 			POSITION pos;
 			if ((pos = util.hoppie._SelectFixFromList(data[5])) != NULL)
@@ -1844,65 +1807,65 @@ void    CDatalinkScreen::OnButtonUpScreenObject(int ObjectType, const char * sOb
 				data[5].Append(str);
 			}
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "PROCEED DIRECT TO " + data[5]);
+			if (util.hoppie.selectedItem->m_RouteId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "PROCEED DIRECT TO " + data[5]);
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "PROCEED DIRECT TO " + data[5]);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayDct = data[5];
+			util.hoppie.selectedItem->m_RelayDct = data[5];
 		}
 		else if (data[0].Find("FLY") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "FLY HDG " + data[5] + '/');
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "FLY HEADING " + data[5]);
+			util.hoppie.selectedItem->m_Route.Insert(2, "FLY HDG " + data[5] + '/');
+			if (util.hoppie.selectedItem->m_RouteId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "FLY HEADING " + data[5]);
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "FLY HEADING " + data[5]);
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayHdg = atoi(data[5]);
+			util.hoppie.selectedItem->m_RelayHdg = atoi(data[5]);
 		}
 		else if (data[0].Find("CONT") > -1)
 		{
 			util.hoppie.popupList = -1;
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "CONT PRSNT HDG" + data[5] + '/');
-			//util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "CONT PRSNT HDG" + '/');
+			util.hoppie.selectedItem->m_Route.Insert(2, "CONT PRSNT HDG" + data[5] + '/');
+			//util.hoppie.selectedItem->m_Route.Insert(2, "CONT PRSNT HDG" + '/');
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "CONTINUE ON PRESENT\nHEADING");
+			if (util.hoppie.selectedItem->m_RouteId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "CONTINUE ON PRESENT\nHEADING");
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "CONTINUE ON PRESENT\nHEADING");
 
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayHdg = atoi(data[5]);
+			util.hoppie.selectedItem->m_RelayHdg = atoi(data[5]);
 		}
 		else if (data[0].Find("DEG L") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "DEG L " + data[5] + '/');
+			util.hoppie.selectedItem->m_Route.Insert(2, "DEG L " + data[5] + '/');
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "TURN LEFT " + data[5] + " DEGREES");
+			if (util.hoppie.selectedItem->m_RouteId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "TURN LEFT " + data[5] + " DEGREES");
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "TURN LEFT " + data[5] + " DEGREES");
 
-			//util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayHdg = atoi(data[5]);
+			//util.hoppie.selectedItem->m_RelayHdg = atoi(data[5]);
 		}
 		else if (data[0].Find("DEG R") > -1)
 		{
-			util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Route.Insert(2, "DEG R " + data[5] + '/');
+			util.hoppie.selectedItem->m_Route.Insert(2, "DEG R " + data[5] + '/');
 
-			if (util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId != "")
-				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId, "TURN RIGHT " + data[5] + " DEGREES");
+			if (util.hoppie.selectedItem->m_RouteId != "")
+				msg.Format("/data2/%d/%s/WU/%s", util.hoppie.cpdlcCounter, util.hoppie.selectedItem->m_RouteId, "TURN RIGHT " + data[5] + " DEGREES");
 			else
 				msg.Format("/data2/%d//WU/%s", util.hoppie.cpdlcCounter, "TURN RIGHT " + data[5] + " DEGREES");
 
-			//util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RelayHdg = atoi(data[5]);
+			//util.hoppie.selectedItem->m_RelayHdg = atoi(data[5]);
 		}
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_Relay->AddTail(msg);
+		util.hoppie.selectedItem->m_Relay->AddTail(msg);
 
 
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteId = "";
-		util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(util.hoppie.selectedItem)).m_RouteATCId.Format("%d", util.hoppie.cpdlcCounter);
+		util.hoppie.selectedItem->m_RouteId = "";
+		util.hoppie.selectedItem->m_RouteATCId.Format("%d", util.hoppie.cpdlcCounter);
 		util.hoppie.cpdlcCounter++;
 		data[0] = "";
 		data[5] = "";
@@ -1992,7 +1955,9 @@ void    CDatalinkScreen::OnClickScreenObject(int ObjectType, const char * sObjec
 		RequestRefresh();
 	}
 	else if (ObjectType >= ITEM_AIRCRAFT) {
-		util.hoppie.selectedItem = ObjectType - ITEM_AIRCRAFT;
+		//util.hoppie.selectedItem = ObjectType - ITEM_AIRCRAFT;
+		util.hoppie.selectedItem = &util.hoppie.hoppieList.GetAt(util.hoppie.hoppieList.FindIndex(ObjectType - ITEM_AIRCRAFT));
+		util.hoppie.selectedItem->m_SelectedIdx = ObjectType - ITEM_AIRCRAFT;
 	}
 	else if (ObjectType == BUTTON_LVL || ObjectType == BUTTON_ROUTE || ObjectType == BUTTON_VCI ||
 		ObjectType == BUTTON_SSR || ObjectType == BUTTON_RST || ObjectType == BUTTON_MIKE)
